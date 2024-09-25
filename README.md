@@ -4,7 +4,7 @@ A proof of concept of how to extract nested JSON API data into a (typically flat
 
 In this example I use [Jmespath](https://jmespath.org/), but this technique is not limited to this JSON query language/tool (I chose Jmespath because it's a dependency of [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) and I work in an AWS environment, but you could use [jq](https://jqlang.github.io/jq/) or even `types.SimpleNamespace` for the same results).
 
-It merely showcases a practical application on the misuse of `jmes_schema_extra` in `pydantic.Field` to embed arbitrary information at the model field level.
+It merely showcases a practical application on the misuse of `json_schema_extra` in `pydantic.Field` to embed arbitrary information at the model field level.
 
 ## Motivation
 
