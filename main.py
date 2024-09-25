@@ -3,25 +3,27 @@ from __future__ import annotations
 from typing import Any
 
 import jmespath
-from pydantic import BaseModel, ValidationInfo, model_validator
+from pydantic import BaseModel, model_validator
+
+JMESPATH_FIELD_KEY = "q"
 
 
 class JMESPathFieldExtractor(BaseModel):
 
     @model_validator(mode="before")
-    def evaluate(cls, data: Any, info: ValidationInfo):
-        if not isinstance(data, dict):
-            return data
-        if info.context and info.context.get("jmesq") is False:  # Optionally disable the logic
-            return data
-
+    @classmethod
+    def evaluate_jmespath_fields_from_input(cls, data: Any) -> Any:
+        """Evaluate the subclass' specified fields with `Field(q=<JMESPath query expression>)`"""
         query_fields = {
             field: query
             for field, info in cls.model_fields.items()
-            if (query := (info.json_schema_extra or {}).get("jmesq"))
+            if (query := (info.json_schema_extra or {}).get(JMESPATH_FIELD_KEY))
         }
-        multiselect_hash = "{" + ",".join(f"{k}: {v}" for k, v in query_fields.items()) + "}"
-        return data | jmespath.search(multiselect_hash, data)
+        if not query_fields:
+            return data
+
+        multiselect_hash_expr = "{" + ",".join(f"{k}:{v}" for k, v in query_fields.items()) + "}"
+        return data | jmespath.search(multiselect_hash_expr, data)
 
 
 if __name__ == "__main__":
@@ -40,10 +42,10 @@ if __name__ == "__main__":
     """
 
     class Vehicle(JMESPathFieldExtractor):
-        uid: str = Field(jmesq="uid")
-        model: str = Field(jmesq="information.model")
-        vin: str = Field(jmesq="information.vin")
-        year: int = Field(jmesq="information.year")
+        uid: str = Field(q="uid")
+        model: str = Field(q="information.model")
+        vin: str = Field(q="information.vin")
+        year: int = Field(q="information.year")
 
     m = Vehicle.model_validate_json(json_data)
     print(m.model_dump_json(indent=4))
